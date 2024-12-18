@@ -1,7 +1,6 @@
 const std = @import("std");
 
 const FLAGS = [_][]const u8{
-    // "-DLIBKTX",
     "-DKTX_API=__declspec(dllexport)",
     "-DBASISU_SUPPORT_OPENCL=0",
     "-DKTX_FEATURE_WRITE",
@@ -16,65 +15,43 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "ktxtool",
-        .target = target,
-        .optimize = optimize,
-    });
-    b.installArtifact(exe);
-
-    exe.addCSourceFiles(.{
-        .root = b.path(""),
-        .files = &.{
-            "tools/ktx/ktx_main.cpp",
-        },
-        .flags = &(FLAGS),
-    });
-    exe.linkLibCpp();
-    exe.addIncludePath(b.path("utils"));
-
-    const ktx = buildKtx(b, target, optimize);
-    b.installArtifact(ktx);
-    exe.linkLibrary(ktx);
-
-    const dfd = buildDfd(b, target, optimize);
-    ktx.linkLibrary(dfd);
-    exe.linkLibrary(dfd);
-
-    const basisu = buildBasisu(b, target, optimize);
-    ktx.linkLibrary(basisu);
-
-    const zstd = buildZstd(b, target, optimize);
-    ktx.linkLibrary(zstd);
-
-    const astc = buildAstc(b, target, optimize);
-    ktx.linkLibrary(astc);
-
-    const imageio = buildImageio(b, target, optimize);
     const fmt = buildFmt(b, target, optimize);
+    const ktx = buildKtx(b, target, optimize, fmt);
+    b.installArtifact(ktx);
 
-    ktx.linkLibrary(imageio);
-    ktx.linkLibrary(fmt);
-    imageio.linkLibrary(dfd);
-    imageio.addIncludePath(basisu.getEmittedIncludeTree().path(b, "basisu"));
-    imageio.addIncludePath(dfd.getEmittedIncludeTree().path(b, "dfdutils"));
+    {
+        // ktxtool
+        const exe = b.addExecutable(.{
+            .name = "ktxtool",
+            .target = target,
+            .optimize = optimize,
+        });
+        exe.addCSourceFiles(.{
+            .root = b.path(""),
+            .files = &.{
+                "tools/ktx/ktx_main.cpp",
+            },
+            .flags = &(FLAGS),
+        });
+        const install = b.addInstallArtifact(exe, .{});
+        b.step("ktxtool", "build ktxtool").dependOn(&install.step);
 
-    exe.linkLibrary(imageio);
-    exe.addIncludePath(b.path("other_include"));
-
-    imageio.linkLibrary(fmt);
-    exe.linkLibrary(fmt);
-    exe.addIncludePath(b.path("external/cxxopts/include"));
-    ktx.addIncludePath(b.path("external/cxxopts/include"));
-
-    ktx.installHeadersDirectory(basisu.getEmittedIncludeTree(), "", .{});
-    ktx.installHeadersDirectory(astc.getEmittedIncludeTree(), "", .{});
+        // stdafx.h
+        exe.addIncludePath(b.path("utils"));
+        // glm
+        exe.addIncludePath(b.path("other_include"));
+        exe.linkLibrary(fmt);
+        exe.addIncludePath(b.path("external/cxxopts/include"));
+        //
+        exe.linkLibrary(ktx);
+    }
 }
 
 fn buildKtx(
     b: *std.Build,
     target: std.Build.ResolvedTarget,
     optimize: std.builtin.OptimizeMode,
+    fmt: *std.Build.Step.Compile,
 ) *std.Build.Step.Compile {
     const lib = b.addSharedLibrary(.{
         .name = "ktx",
@@ -105,10 +82,12 @@ fn buildKtx(
             "lib/vkformat_str.c",
             "lib/vkformat_typesize.c",
             "external/etcdec/etcdec.cxx",
+            // encoder
             "lib/basis_encode.cpp",
             "lib/astc_codec.cpp",
             "lib/writer1.c",
             "lib/writer2.c",
+            // ktxtool
             "tools/ktx/command.cpp",
             "tools/ktx/command_compare.cpp",
             "tools/ktx/command_create.cpp",
@@ -132,6 +111,39 @@ fn buildKtx(
     lib.installHeader(b.path("lib/formatsize.h"), "formatsize.h");
     lib.installHeader(b.path("lib/texture_funcs.inl"), "texture_funcs.inl");
 
+    // exe.addIncludePath(b.path("utils"));
+
+    const dfd = buildDfd(b, target, optimize);
+    lib.linkLibrary(dfd);
+
+    const basisu = buildBasisu(b, target, optimize);
+    lib.linkLibrary(basisu);
+
+    const zstd = buildZstd(b, target, optimize);
+    lib.linkLibrary(zstd);
+
+    const astc = buildAstc(b, target, optimize);
+    lib.linkLibrary(astc);
+
+    const imageio = buildImageio(b, target, optimize);
+
+    lib.linkLibrary(imageio);
+    lib.linkLibrary(fmt);
+    imageio.linkLibrary(dfd);
+    imageio.addIncludePath(basisu.getEmittedIncludeTree().path(b, "basisu"));
+    imageio.addIncludePath(dfd.getEmittedIncludeTree().path(b, "dfdutils"));
+
+    // exe.linkLibrary(imageio);
+    // exe.addIncludePath(b.path("other_include"));
+
+    imageio.linkLibrary(fmt);
+    // exe.linkLibrary(fmt);
+    lib.addIncludePath(b.path("external/cxxopts/include"));
+
+    lib.installHeadersDirectory(basisu.getEmittedIncludeTree(), "", .{});
+    lib.installHeadersDirectory(astc.getEmittedIncludeTree(), "", .{});
+    lib.installHeadersDirectory(dfd.getEmittedIncludeTree(), "", .{});
+    lib.installHeadersDirectory(imageio.getEmittedIncludeTree(), "", .{});
     return lib;
 }
 
@@ -334,6 +346,7 @@ fn buildDfd(
     lib.addIncludePath(b.path("include"));
     lib.installHeader(b.path("include/KHR/khr_df.h"), "KHR/khr_df.h");
     lib.installHeader(b.path("external/dfdutils/dfd.h"), "dfdutils/dfd.h");
+    lib.addIncludePath(b.path("lib"));
     lib.installHeader(b.path("lib/vkformat_enum.h"), "vkformat_enum.h");
     return lib;
 }
