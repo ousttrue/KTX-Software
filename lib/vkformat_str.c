@@ -14,9 +14,10 @@
 #include <stdint.h>
 #include <ctype.h>
 
+#include "ktx.h"
 #include "vkformat_enum.h"
 
-const char*
+KTX_API const char*
 vkFormatString(VkFormat format)
 {
     switch (format) {

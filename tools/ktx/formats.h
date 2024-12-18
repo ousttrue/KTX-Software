@@ -7,7 +7,6 @@
 #include "vkformat_enum.h"
 #include <fmt/format.h>
 #include "ktx.h"
-#define LIBKTX // To stop dfdutils including vulkan_core.h.
 #include "dfdutils/dfd.h"
 #include <string>
 #include <string_view>

@@ -20,6 +20,7 @@
 #ifndef _TEXTURE2_H_
 #define _TEXTURE2_H_
 
+#include "ktx.h"
 #include "texture.h"
 
 #ifdef __cplusplus
@@ -50,7 +51,7 @@ KTX_error_code
 ktxTexture2_LoadImageData(ktxTexture2* This,
                           ktx_uint8_t* pBuffer, ktx_size_t bufSize);
 
-KTX_error_code
+KTX_API KTX_error_code
 ktxTexture2_constructCopy(ktxTexture2* This, ktxTexture2* orig);
 KTX_error_code
 ktxTexture2_constructFromStreamAndHeader(ktxTexture2* This, ktxStream* pStream,

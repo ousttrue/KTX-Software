@@ -42,7 +42,7 @@
 #else
     // Command is built statically into the executable
     #define KTX_COMMAND_ENTRY_POINT(NAME, CMDCLASS) \
-        int NAME KTX_COMMAND_ENTRY_POINT_DEF(CMDCLASS)
+        KTX_API int NAME KTX_COMMAND_ENTRY_POINT_DEF(CMDCLASS)
 #endif
 
 #define KTX_COMMAND_BUILTIN(NAME) int NAME(int argc, char* argv[]);
@@ -125,7 +125,7 @@ struct Reporter {
     }
 };
 
-[[nodiscard]] std::string version(bool testrun);
+[[nodiscard]] KTX_API std::string version(bool testrun);
 
 class Command : public Reporter {
 public:

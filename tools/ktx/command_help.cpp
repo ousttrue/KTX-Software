@@ -154,7 +154,8 @@ void CommandHelp::executeHelp() {
         executablePath.resize(size);
     } while (GetModuleFileNameW(nullptr, executablePath.data(), size) == size);
 
-    PathCchRemoveFileSpec(executablePath.data(), executablePath.size());
+    assert(false);
+    // PathCchRemoveFileSpec(executablePath.data(), executablePath.size());
     executablePath.resize(wcslen(executablePath.c_str()));
 
     const auto commandStr = options.command.value_or("");

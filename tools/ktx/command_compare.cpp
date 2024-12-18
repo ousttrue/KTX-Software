@@ -30,7 +30,7 @@
 namespace ktx {
 
 extern "C" {
-    const char* ktxBUImageFlagsBitString(ktx_uint32_t bit_index, bool bit_value);
+    KTX_API const char* ktxBUImageFlagsBitString(ktx_uint32_t bit_index, bool bit_value);
 }
 
 template <typename T>
